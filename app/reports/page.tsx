@@ -70,6 +70,7 @@ export default function ReportsPage() {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
+        timeZone: 'Asia/Jakarta',
       }),
       summary: {
         totalRevenue,
@@ -82,6 +83,7 @@ export default function ReportsPage() {
         date: new Date(t.transactionDate).toLocaleDateString('id-ID', {
           day: 'numeric',
           month: 'short',
+          timeZone: 'Asia/Jakarta',
         }),
         description: t.description,
         type: t.type,

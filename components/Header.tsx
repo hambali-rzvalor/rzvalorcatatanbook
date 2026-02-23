@@ -6,6 +6,7 @@ export default function Header() {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'Asia/Jakarta',
   });
 
   return (

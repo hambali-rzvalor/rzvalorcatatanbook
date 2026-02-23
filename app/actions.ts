@@ -133,11 +133,13 @@ export async function getDashboardData() {
           time: new Date(tx.transactionDate).toLocaleTimeString('id-ID', {
             hour: '2-digit',
             minute: '2-digit',
+            timeZone: 'Asia/Jakarta',
           }),
           date: new Date(tx.transactionDate).toLocaleDateString('id-ID', {
             day: 'numeric',
             month: 'short',
             year: 'numeric',
+            timeZone: 'Asia/Jakarta',
           }),
         })),
         lowStockIngredients,

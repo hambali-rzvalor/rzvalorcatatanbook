@@ -218,11 +218,13 @@ export default function SalesPage() {
                             {new Date(sale.transactionDate).toLocaleDateString('id-ID', {
                               day: 'numeric',
                               month: 'short',
+                              timeZone: 'Asia/Jakarta',
                             })}{' '}
                             •{' '}
                             {new Date(sale.transactionDate).toLocaleTimeString('id-ID', {
                               hour: '2-digit',
                               minute: '2-digit',
+                              timeZone: 'Asia/Jakarta',
                             })}
                           </p>
                         </div>

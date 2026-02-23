@@ -96,7 +96,7 @@ export default async function Home() {
                 Statistik Hari Ini
               </h3>
               <span className="text-xs text-gray-400 font-medium bg-gray-100 px-3 py-1.5 rounded-full">
-                {new Date().toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {new Date().toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' })}
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

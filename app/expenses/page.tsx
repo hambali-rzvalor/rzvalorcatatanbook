@@ -209,6 +209,7 @@ export default function ExpensesPage() {
                             {new Date(expense.transactionDate).toLocaleDateString('id-ID', {
                               day: 'numeric',
                               month: 'short',
+                              timeZone: 'Asia/Jakarta',
                             })}
                           </p>
                         </div>
