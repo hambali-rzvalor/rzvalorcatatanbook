@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍢 Tahu Walik Manager
 
-## Getting Started
+Aplikasi manajemen keuangan untuk usaha Tahu Walik dengan fitur lengkap untuk mencatat penjualan, pengeluaran, dan laporan keuangan.
 
-First, run the development server:
+## 🚀 Fitur
+
+- **Dashboard** - Lihat total untung, omzet, pengeluaran, dan porsi terjual hari ini
+- **Penjualan** - Catat dan kelola semua transaksi penjualan
+- **Pengeluaran** - Catat modal dan pengeluaran operasional
+- **Laporan** - Analisis keuangan dengan grafik dan export PDF
+- **Aktivitas** - Riwayat semua transaksi dengan filter dan pagination
+- **Notifikasi** - Notifikasi untuk stok menipis dan update penting
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Database:** PostgreSQL (Neon)
+- **ORM:** Drizzle ORM
+- **Styling:** Tailwind CSS
+- **Icons:** Lucide React
+- **PDF Export:** jsPDF
+- **Deployment:** Vercel
+
+## 📦 Instalasi
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/yourusername/tahu-walik-manager.git
+cd tahu-walik-manager
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Setup Database
+
+1. Buka [Neon Console](https://console.neon.tech/)
+2. Buat project baru
+3. Copy connection string
+4. Buat file `.env.local`:
+
+```bash
+cp .env.example .env.local
+```
+
+5. Edit `.env.local` dan paste connection string:
+
+```env
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+```
+
+6. Push schema ke database:
+
+```bash
+npm run db:push
+```
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka [http://localhost:3000](http://localhost:3000) di browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📖 Database Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Push schema ke database
+npm run db:push
 
-## Learn More
+# Generate migration files
+npm run db:generate
 
-To learn more about Next.js, take a look at the following resources:
+# Run migrations
+npm run db:migrate
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📁 Struktur Folder
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+tahu-walik-manager/
+├── app/
+│   ├── page.tsx              # Dashboard
+│   ├── add/                  # Tambah transaksi
+│   ├── sales/                # Penjualan
+│   ├── expenses/             # Pengeluaran
+│   ├── reports/              # Laporan
+│   ├── activity/             # Aktivitas
+│   └── notifications/        # Notifikasi
+├── components/
+│   ├── Sidebar.tsx
+│   ├── Header.tsx
+│   ├── BottomNav.tsx
+│   ├── StatCard.tsx
+│   └── Pagination.tsx
+├── db/
+│   ├── schema.ts             # Database schema
+│   └── index.ts              # Database connection
+├── lib/
+│   └── pdfExport.ts          # PDF export utility
+├── app/
+│   └── actions.ts            # Server actions
+└── .env.local                # Environment variables (JANGAN COMMIT!)
+```
 
-## Deploy on Vercel
+## 🔐 Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+File `.env.local` berisi informasi sensitif dan **TIDAK BOLEH** di-commit ke Git.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```env
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+```
+
+## 🚀 Deploy ke Vercel
+
+1. Push code ke GitHub
+2. Buka [Vercel](https://vercel.com/)
+3. Import repository GitHub kamu
+4. Tambahkan environment variable `DATABASE_URL` di Vercel
+5. Deploy!
+
+## 📝 License
+
+MIT License
+
+## 👨‍💻 Author
+
+Dibuat dengan ❤️ untuk Tahu Walik Manager
