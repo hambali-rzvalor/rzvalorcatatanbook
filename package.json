@@ -1,6 +1,7 @@
 {
   "name": "tahu-walik-manager",
   "version": "0.1.0",
+  "author": "Rzvalor",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -26,7 +26,7 @@ Aplikasi manajemen keuangan untuk usaha Tahu Walik dengan fitur lengkap untuk me
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/tahu-walik-manager.git
+git clone https://github.com/Rzvalor/tahu-walik-manager.git
 cd tahu-walik-manager
 ```
 
@@ -130,4 +130,4 @@ MIT License
 
 ## 👨‍💻 Author
 
-Dibuat dengan ❤️ untuk Tahu Walik Manager
+Created by **Rzvalor**

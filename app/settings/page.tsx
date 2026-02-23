@@ -73,7 +73,7 @@ export default function SettingsPage() {
                 <User className="w-8 h-8" />
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold">Tahu Walik Manager</h2>
+                <h2 className="text-xl font-bold">Tahu Walik</h2>
                 <p className="text-green-100 text-sm">Admin</p>
               </div>
               <ChevronRight className="w-6 h-6 text-green-100" />
@@ -155,7 +155,7 @@ export default function SettingsPage() {
 
           {/* App Version */}
           <p className="text-center text-gray-400 text-sm mt-6">
-            Tahu Walik Manager v1.0.0
+            Tahu Walik
           </p>
         </main>
       </div>
