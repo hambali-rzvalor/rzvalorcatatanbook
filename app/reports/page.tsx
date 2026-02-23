@@ -16,9 +16,23 @@ function formatIDR(amount: number) {
   }).format(amount);
 }
 
+// Helper function to get day name in Indonesian
+function getDayName(date: Date): string {
+  const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  return days[date.getDay()];
+}
+
+// Helper function to get start of day
+function getStartOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function ReportsPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('week');
 
   useEffect(() => {
     async function loadTransactions() {
@@ -48,16 +62,55 @@ export default function ReportsPage() {
   const totalProfit = totalRevenue - totalExpense;
   const totalSales = transactions.filter((t) => t.type === 'income').length;
 
-  // Weekly data (mock for now, can be enhanced with real date filtering)
-  const weeklyData = [
-    { day: 'Sen', revenue: 0, profit: 0 },
-    { day: 'Sel', revenue: 0, profit: 0 },
-    { day: 'Rab', revenue: 0, profit: 0 },
-    { day: 'Kam', revenue: 0, profit: 0 },
-    { day: 'Jum', revenue: 0, profit: 0 },
-    { day: 'Sab', revenue: 0, profit: 0 },
-    { day: 'Min', revenue: 0, profit: 0 },
-  ];
+  // Calculate weekly data from transactions
+  const weeklyData = (() => {
+    const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Calculate start of week (Monday)
+    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+    const startOfWeek = getStartOfDay(new Date(today));
+    startOfWeek.setDate(today.getDate() + mondayOffset);
+
+    // Initialize data for each day
+    const data: Array<{ day: string; revenue: number; profit: number; expense: number }> = days.map(day => ({
+      day,
+      revenue: 0,
+      profit: 0,
+      expense: 0,
+    }));
+
+    // Fill in transaction data
+    transactions.forEach((tx) => {
+      const txDate = new Date(tx.transactionDate);
+      const txDayIndex = txDate.getDay();
+      
+      // Check if transaction is within this week
+      const diffTime = Math.abs(today.getTime() - txDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays <= 7 || txDate >= startOfWeek) {
+        const amount = parseInt(tx.amount || 0);
+        const dayIndex = txDayIndex === 0 ? 6 : txDayIndex - 1; // Convert to 0-6 (Mon-Sun)
+        
+        if (dayIndex >= 0 && dayIndex < 7) {
+          if (tx.type === 'income') {
+            data[dayIndex].revenue += amount;
+            data[dayIndex].profit += amount;
+          } else {
+            data[dayIndex].expense += amount;
+            data[dayIndex].profit -= amount;
+          }
+        }
+      }
+    });
+
+    return data;
+  })();
+
+  // Find max revenue for scaling
+  const maxRevenue = Math.max(...weeklyData.map(d => d.revenue), 1);
 
   const handleExportPDF = () => {
     const reportData = {
@@ -178,17 +231,38 @@ export default function ReportsPage() {
 
                 {/* Bar Chart */}
                 <div className="flex items-end justify-between gap-2 h-40">
-                  {weeklyData.map((data, index) => (
-                    <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                      <div className="w-full relative h-full flex items-end">
-                        <div
-                          className="w-full bg-gray-200 rounded-t-lg"
-                          style={{ height: '10%' }}
-                        ></div>
+                  {weeklyData.map((data, index) => {
+                    const heightPercentage = maxRevenue > 0 ? (data.revenue / maxRevenue) * 100 : 0;
+                    const hasData = data.revenue > 0;
+                    
+                    return (
+                      <div key={index} className="flex-1 flex flex-col items-center gap-2">
+                        <div className="w-full relative h-full flex items-end">
+                          <div
+                            className={`w-full rounded-t-lg transition-all duration-500 ${
+                              hasData
+                                ? 'bg-linear-to-br from-green-400 to-green-500 shadow-md shadow-green-200'
+                                : 'bg-gray-200'
+                            }`}
+                            style={{ height: `${Math.max(heightPercentage, hasData ? 20 : 10)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium">{data.day}</span>
                       </div>
-                      <span className="text-xs text-gray-500 font-medium">{data.day}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-linear-to-br from-green-400 to-green-500 rounded"></div>
+                    <span className="text-xs text-gray-600">Pendapatan</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-200 rounded"></div>
+                    <span className="text-xs text-gray-600">Tidak ada data</span>
+                  </div>
                 </div>
               </div>
 
@@ -201,7 +275,7 @@ export default function ReportsPage() {
                     </div>
                     <span className="text-gray-500 text-sm">Rata-rata Harian</span>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">{formatIDR(totalProfit / 7 || 0)}</p>
+                  <p className="text-xl font-bold text-gray-900">{formatIDR(totalRevenue / 7 || 0)}</p>
                 </div>
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-3 mb-3">
@@ -221,16 +295,21 @@ export default function ReportsPage() {
                   <h3 className="text-lg font-bold text-gray-900">Pilih Periode</h3>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  {['Hari Ini', '7 Hari', '30 Hari'].map((period, index) => (
+                  {[
+                    { id: 'today', label: 'Hari Ini' },
+                    { id: 'week', label: '7 Hari' },
+                    { id: 'month', label: '30 Hari' }
+                  ].map((period) => (
                     <button
-                      key={period}
+                      key={period.id}
+                      onClick={() => setSelectedPeriod(period.id as typeof selectedPeriod)}
                       className={`py-3 rounded-xl font-medium transition-all ${
-                        index === 1
+                        selectedPeriod === period.id
                           ? 'bg-green-500 text-white shadow-md shadow-green-200'
                           : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                       }`}
                     >
-                      {period}
+                      {period.label}
                     </button>
                   ))}
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ShoppingCart, Wallet, Search, Filter, Calendar } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Wallet, Search, Filter, Calendar, Clock } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
@@ -199,41 +199,48 @@ export default function ActivityPage() {
               {paginatedTransactions.map((activity) => (
                 <div
                   key={activity.id}
-                  className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+                  className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                       <div
-                        className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 ${
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 shrink-0 ${
                           activity.type === 'income'
                             ? 'bg-linear-to-br from-green-400 to-green-500 text-white'
                             : 'bg-linear-to-br from-red-400 to-red-500 text-white'
                         }`}
                       >
                         {activity.type === 'income' ? (
-                          <ShoppingCart className="w-6 h-6" strokeWidth={2.5} />
+                          <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
                         ) : (
-                          <Wallet className="w-6 h-6" strokeWidth={2.5} />
+                          <Wallet className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
                         )}
                       </div>
-                      <div>
-                        <p className="font-bold text-gray-900">{activity.description}</p>
-                        <p className="text-sm text-gray-500">
-                          {new Date(activity.transactionDate).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            timeZone: 'Asia/Jakarta',
-                          })} •{' '}
-                          {new Date(activity.transactionDate).toLocaleTimeString('id-ID', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            timeZone: 'Asia/Jakarta',
-                          })}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{activity.description}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 font-medium flex items-center gap-1.5 flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(activity.transactionDate).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'short',
+                              timeZone: 'Asia/Jakarta',
+                            })}
+                          </span>
+                          <span className="text-gray-300">•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(activity.transactionDate).toLocaleTimeString('id-ID', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              timeZone: 'Asia/Jakarta',
+                            })}
+                          </span>
                         </p>
                       </div>
                     </div>
                     <span
-                      className={`font-bold text-lg ${
+                      className={`font-bold text-sm sm:text-lg whitespace-nowrap shrink-0 ${
                         activity.type === 'income'
                           ? 'text-green-600'
                           : 'text-red-500'
