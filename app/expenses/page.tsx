@@ -279,7 +279,7 @@ export default function ExpensesPage() {
 
           {/* Floating Add Button (Mobile) */}
           <a
-            href="/add"
+            href="/add?type=expense"
             className="lg:hidden fixed bottom-24 right-6 bg-linear-to-br from-red-500 to-red-600 text-white p-4 rounded-full shadow-lg shadow-red-300 hover:shadow-xl transition-shadow"
           >
             <Plus className="w-6 h-6" />

@@ -288,7 +288,7 @@ export default function SalesPage() {
 
           {/* Floating Add Button (Mobile) */}
           <a
-            href="/add"
+            href="/add?type=income"
             className="lg:hidden fixed bottom-24 right-6 bg-linear-to-br from-green-500 to-green-600 text-white p-4 rounded-full shadow-lg shadow-green-300 hover:shadow-xl transition-shadow"
           >
             <Plus className="w-6 h-6" />
