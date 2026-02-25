@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { ArrowLeft, PlusCircle, Tag, Hash, Calendar, Clock, Save } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Tag, Hash, Calendar, Save } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
@@ -32,7 +32,6 @@ function AddTransactionForm() {
   const [category, setCategory] = useState('');
   const [portions, setPortions] = useState('');
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
-  const [transactionTime, setTransactionTime] = useState(new Date().toTimeString().slice(0, 5));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Set transaction type based on URL query parameter
@@ -52,9 +51,10 @@ function AddTransactionForm() {
     setIsSubmitting(true);
 
     try {
-      // Combine date and time
-      const transactionDateTime = new Date(`${transactionDate}T${transactionTime}`);
-      
+      // Use current time for transaction
+      const now = new Date();
+      const transactionDateTime = new Date(`${transactionDate}T${now.toTimeString().slice(0, 8)}`);
+
       const result = await addTransaction({
         type: transactionType,
         category: category as any,
@@ -157,7 +157,7 @@ function AddTransactionForm() {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
+            className="w-full pl-12 pr-10 py-3.5 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer"
             required
           >
             <option value="">Pilih kategori</option>
@@ -165,6 +165,12 @@ function AddTransactionForm() {
               <option key={cat.value} value={cat.value}>{cat.label}</option>
             ))}
           </select>
+          {/* Custom dropdown arrow */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -216,23 +222,9 @@ function AddTransactionForm() {
             required
           />
         </div>
-      </div>
-
-      {/* Time Input */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Waktu
-        </label>
-        <div className="relative">
-          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="time"
-            value={transactionTime}
-            onChange={(e) => setTransactionTime(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            required
-          />
-        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          ⏱️ Waktu otomatis menggunakan waktu saat ini
+        </p>
       </div>
 
       {/* Submit Button */}
