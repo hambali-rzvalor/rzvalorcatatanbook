@@ -33,6 +33,8 @@ export default function ReportsPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('week');
+  const [chartType, setChartType] = useState<'revenue' | 'profit'>('revenue');
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     async function loadTransactions() {
@@ -48,26 +50,57 @@ export default function ReportsPage() {
       }
     }
     loadTransactions();
+
+    // Handle scroll for header shadow effect
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Calculate stats from transactions
-  const totalRevenue = transactions
+  // Filter transactions based on selected period
+  const filteredTransactions = (() => {
+    const today = new Date();
+    const startDate = new Date(today);
+
+    if (selectedPeriod === 'today') {
+      // Only today's transactions
+      return transactions.filter(t => {
+        const txDate = new Date(t.transactionDate);
+        return txDate.toDateString() === today.toDateString();
+      });
+    } else if (selectedPeriod === 'week') {
+      // Last 7 days
+      startDate.setDate(today.getDate() - 7);
+      return transactions.filter(t => new Date(t.transactionDate) >= startDate);
+    } else if (selectedPeriod === 'month') {
+      // Last 30 days
+      startDate.setDate(today.getDate() - 30);
+      return transactions.filter(t => new Date(t.transactionDate) >= startDate);
+    }
+    return transactions;
+  })();
+
+  // Calculate stats from filtered transactions
+  const periodTotalRevenue = filteredTransactions
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + parseInt(t.amount || 0), 0);
 
-  const totalExpense = transactions
+  const periodTotalExpense = filteredTransactions
     .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + parseInt(t.amount || 0), 0);
 
-  const totalProfit = totalRevenue - totalExpense;
-  const totalSales = transactions.filter((t) => t.type === 'income').length;
+  const periodTotalProfit = periodTotalRevenue - periodTotalExpense;
+  const periodTotalSales = filteredTransactions.filter((t) => t.type === 'income').length;
 
-  // Calculate weekly data from transactions
+  // Calculate weekly data from filtered transactions
   const weeklyData = (() => {
     const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
     const today = new Date();
     const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
+
     // Calculate start of week (Monday)
     const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
     const startOfWeek = getStartOfDay(new Date(today));
@@ -82,18 +115,16 @@ export default function ReportsPage() {
     }));
 
     // Fill in transaction data
-    transactions.forEach((tx) => {
+    filteredTransactions.forEach((tx) => {
       const txDate = new Date(tx.transactionDate);
-      const txDayIndex = txDate.getDay();
-      
-      // Check if transaction is within this week
-      const diffTime = Math.abs(today.getTime() - txDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays <= 7 || txDate >= startOfWeek) {
+      const txStartOfDay = getStartOfDay(txDate);
+
+      // Check if transaction is within this week (on or after startOfWeek and not in the future)
+      if (txStartOfDay >= startOfWeek && txStartOfDay <= today) {
         const amount = parseInt(tx.amount || 0);
+        const txDayIndex = txDate.getDay();
         const dayIndex = txDayIndex === 0 ? 6 : txDayIndex - 1; // Convert to 0-6 (Mon-Sun)
-        
+
         if (dayIndex >= 0 && dayIndex < 7) {
           if (tx.type === 'income') {
             data[dayIndex].revenue += amount;
@@ -109,9 +140,6 @@ export default function ReportsPage() {
     return data;
   })();
 
-  // Find max revenue for scaling
-  const maxRevenue = Math.max(...weeklyData.map(d => d.revenue), 1);
-
   const handleExportPDF = () => {
     const reportData = {
       businessName: 'Tahu Walik Manager',
@@ -126,10 +154,10 @@ export default function ReportsPage() {
         timeZone: 'Asia/Jakarta',
       }),
       summary: {
-        totalRevenue,
-        totalExpense,
-        totalProfit,
-        totalSales,
+        totalRevenue: periodTotalRevenue,
+        totalExpense: periodTotalExpense,
+        totalProfit: periodTotalProfit,
+        totalSales: periodTotalSales,
       },
       weeklyData,
       transactions: transactions.slice(0, 10).map((t) => ({
@@ -148,17 +176,20 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <div className="flex h-screen bg-linear-to-br from-gray-50 to-gray-100 overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col lg:ml-0">
-        <Header />
+        <div className={`sticky top-0 z-50 bg-linear-to-br from-gray-50 to-gray-100/95 backdrop-blur-sm transition-shadow duration-300 ${
+          isScrolled ? 'shadow-lg shadow-gray-200/50' : ''
+        }`}>
+          <Header />
+        </div>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-28 lg:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
           {/* Header Section */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Laporan</h1>
-              <p className="text-gray-500 mt-1">Analisis keuangan usaha Anda</p>
+              <p className="text-gray-500">Analisis keuangan usaha Anda</p>
             </div>
             <button
               onClick={handleExportPDF}
@@ -189,29 +220,31 @@ export default function ReportsPage() {
             </div>
           ) : (
             <>
-              {/* Monthly Summary */}
+              {/* Period Summary */}
               <div className="bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-6 shadow-lg shadow-purple-200 text-white mb-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-white/20 p-3 rounded-xl">
                     <BarChart3 className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-white/80 text-sm font-medium">Ringkasan Bulan Ini</p>
-                    <p className="text-2xl font-bold">{formatIDR(totalProfit)}</p>
+                    <p className="text-white/80 text-sm font-medium">
+                      Ringkasan {selectedPeriod === 'today' ? 'Hari Ini' : selectedPeriod === 'week' ? '7 Hari Terakhir' : '30 Hari Terakhir'}
+                    </p>
+                    <p className="text-2xl font-bold">{formatIDR(periodTotalProfit)}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/20">
                   <div>
                     <p className="text-white/60 text-xs mb-1">Pemasukan</p>
-                    <p className="font-bold">{formatIDR(totalRevenue)}</p>
+                    <p className="font-bold">{formatIDR(periodTotalRevenue)}</p>
                   </div>
                   <div>
                     <p className="text-white/60 text-xs mb-1">Pengeluaran</p>
-                    <p className="font-bold">{formatIDR(totalExpense)}</p>
+                    <p className="font-bold">{formatIDR(periodTotalExpense)}</p>
                   </div>
                   <div>
                     <p className="text-white/60 text-xs mb-1">Penjualan</p>
-                    <p className="font-bold">{totalSales}</p>
+                    <p className="font-bold">{periodTotalSales}</p>
                   </div>
                 </div>
               </div>
@@ -223,31 +256,46 @@ export default function ReportsPage() {
                     <TrendingUp className="w-5 h-5 text-green-500" />
                     Grafik Minggu Ini
                   </h3>
-                  <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500">
-                    <option>Pendapatan</option>
-                    <option>Keuntungan</option>
+                  <select 
+                    value={chartType}
+                    onChange={(e) => setChartType(e.target.value as 'revenue' | 'profit')}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                  >
+                    <option value="revenue">Pendapatan</option>
+                    <option value="profit">Keuntungan</option>
                   </select>
                 </div>
 
                 {/* Bar Chart */}
-                <div className="flex items-end justify-between gap-2 h-40">
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px', height: '160px', paddingBottom: '8px' }}>
                   {weeklyData.map((data, index) => {
-                    const heightPercentage = maxRevenue > 0 ? (data.revenue / maxRevenue) * 100 : 0;
-                    const hasData = data.revenue > 0;
-                    
+                    // Determine value based on selected chart type
+                    const value = chartType === 'revenue' ? data.revenue : data.profit;
+                    const maxValue = chartType === 'revenue' 
+                      ? Math.max(...weeklyData.map(d => d.revenue), 1)
+                      : Math.max(...weeklyData.map(d => Math.abs(d.profit)), 1);
+                    const heightPercentage = maxValue > 0 ? (Math.abs(value) / maxValue) * 100 : 0;
+                    const hasData = value !== 0;
+                    const isPositive = value >= 0;
+                    const barHeight = hasData ? Math.max(heightPercentage, 15) : 4;
+
                     return (
-                      <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                        <div className="w-full relative h-full flex items-end">
-                          <div
-                            className={`w-full rounded-t-lg transition-all duration-500 ${
-                              hasData
-                                ? 'bg-linear-to-br from-green-400 to-green-500 shadow-md shadow-green-200'
-                                : 'bg-gray-200'
-                            }`}
-                            style={{ height: `${Math.max(heightPercentage, hasData ? 20 : 10)}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-500 font-medium">{data.day}</span>
+                      <div key={index} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', height: '100%' }}>
+                        <div 
+                          style={{ 
+                            width: '100%', 
+                            height: `${barHeight}%`, 
+                            background: hasData 
+                              ? isPositive 
+                                ? 'linear-gradient(180deg, #22c55e 0%, #16a34a 100%)' 
+                                : 'linear-gradient(180deg, #ef4444 0%, #dc2626 100%)'
+                              : 'linear-gradient(180deg, #e5e7eb 0%, #d1d5db 100%)',
+                            borderRadius: '6px 6px 0 0',
+                            transition: 'all 0.3s ease',
+                            boxShadow: hasData ? '0 4px 6px -1px rgba(34, 197, 94, 0.3)' : 'none',
+                          }}
+                        ></div>
+                        <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>{data.day}</span>
                       </div>
                     );
                   })}
@@ -256,11 +304,15 @@ export default function ReportsPage() {
                 {/* Legend */}
                 <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-linear-to-br from-green-400 to-green-500 rounded"></div>
-                    <span className="text-xs text-gray-600">Pendapatan</span>
+                    <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: 'linear-gradient(180deg, #22c55e 0%, #16a34a 100%)' }}></div>
+                    <span className="text-xs text-gray-600">{chartType === 'revenue' ? 'Pendapatan' : 'Keuntungan'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-gray-200 rounded"></div>
+                    <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 100%)' }}></div>
+                    <span className="text-xs text-gray-600">Rugi</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: 'linear-gradient(180deg, #e5e7eb 0%, #d1d5db 100%)' }}></div>
                     <span className="text-xs text-gray-600">Tidak ada data</span>
                   </div>
                 </div>
@@ -275,7 +327,9 @@ export default function ReportsPage() {
                     </div>
                     <span className="text-gray-500 text-sm">Rata-rata Harian</span>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">{formatIDR(totalRevenue / 7 || 0)}</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {formatIDR(periodTotalRevenue / (selectedPeriod === 'today' ? 1 : selectedPeriod === 'week' ? 7 : 30) || 0)}
+                  </p>
                 </div>
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-3 mb-3">
@@ -284,7 +338,7 @@ export default function ReportsPage() {
                     </div>
                     <span className="text-gray-500 text-sm">Total Transaksi</span>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">{transactions.length}</p>
+                  <p className="text-xl font-bold text-gray-900">{filteredTransactions.length}</p>
                 </div>
               </div>
 
@@ -318,7 +372,9 @@ export default function ReportsPage() {
           )}
         </main>
       </div>
-      <BottomNav />
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
+        <BottomNav />
+      </div>
     </div>
   );
 }

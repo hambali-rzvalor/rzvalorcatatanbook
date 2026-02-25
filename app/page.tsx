@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { TrendingUp, Wallet, ShoppingCart, DollarSign, PlusCircle } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -24,32 +27,50 @@ const emptyStats = {
 
 const emptyActivity: Array<{ id: number; type: 'income' | 'expense'; desc: string; amount: number; time: string }> = [];
 
-export default async function Home() {
-  let todayStats = emptyStats;
-  let recentActivity = emptyActivity;
+function DashboardContent() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [todayStats, setTodayStats] = useState(emptyStats);
+  const [recentActivity, setRecentActivity] = useState(emptyActivity);
 
-  try {
-    // Try to fetch real data from database
-    const response = await getDashboardData();
-    if (response.success) {
-      todayStats = response.data.todayStats;
-      recentActivity = response.data.recentActivity;
+  useEffect(() => {
+    // Handle scroll for header shadow effect
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    async function loadDashboardData() {
+      try {
+        const response = await getDashboardData();
+        if (response.success) {
+          setTodayStats(response.data.todayStats);
+          setRecentActivity(response.data.recentActivity);
+        }
+      } catch (error) {
+        console.log('Database not configured, showing empty state');
+      }
     }
-  } catch (error) {
-    // Show empty state if database is not available
-    console.log('Database not configured, showing empty state');
-  }
+    
+    loadDashboardData();
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <div className="flex h-screen bg-linear-to-br from-gray-50 to-gray-100 overflow-hidden">
       {/* Sidebar untuk Desktop */}
       <Sidebar />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col lg:ml-0">
-        <Header />
+        <div className={`sticky top-0 z-50 bg-linear-to-br from-gray-50 to-gray-100/95 backdrop-blur-sm transition-shadow duration-300 ${
+          isScrolled ? 'shadow-lg shadow-gray-200/50' : ''
+        }`}>
+          <Header />
+        </div>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-28 lg:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
           {/* Section: Total Untung Hari Ini (Highlight) */}
           <section className="mb-8">
             <div className="relative overflow-hidden bg-linear-to-br from-emerald-500 via-green-500 to-teal-500 rounded-3xl p-8 shadow-lg shadow-green-200">
@@ -208,7 +229,11 @@ export default async function Home() {
       </div>
 
       {/* Bottom Navigation untuk Mobile */}
-      <BottomNav />
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
+        <BottomNav />
+      </div>
     </div>
   );
 }
+
+export default DashboardContent;

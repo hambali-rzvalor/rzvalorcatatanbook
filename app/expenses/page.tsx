@@ -24,9 +24,18 @@ export default function ExpensesPage() {
   const [editAmount, setEditAmount] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     loadExpenses();
+
+    // Handle scroll for header shadow effect
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   async function loadExpenses() {
@@ -93,18 +102,16 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <div className="flex h-screen bg-linear-to-br from-gray-50 to-gray-100 overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col lg:ml-0">
-        <Header />
+        <div className={`sticky top-0 z-50 bg-linear-to-br from-gray-50 to-gray-100/95 backdrop-blur-sm transition-shadow duration-300 ${
+          isScrolled ? 'shadow-lg shadow-gray-200/50' : ''
+        }`}>
+          <Header />
+        </div>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-28 lg:pb-8">
-          {/* Header Section */}
-          <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Pengeluaran</h1>
-            <p className="text-gray-500 mt-1">Catat dan kelola pengeluaran harian</p>
-          </div>
-
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
           {/* Summary Card */}
           {expenses.length > 0 ? (
             <div className="mb-6">
@@ -286,7 +293,9 @@ export default function ExpensesPage() {
           </a>
         </main>
       </div>
-      <BottomNav />
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
+        <BottomNav />
+      </div>
     </div>
   );
 }
