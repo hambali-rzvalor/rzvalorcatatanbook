@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { ArrowLeft, PlusCircle, Tag, Hash, Calendar, Save } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Tag, Hash, Calendar, Save, QrCode } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
+import QrisPaymentModal from '@/components/QrisPaymentModal';
 import { addTransaction } from '@/app/actions';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -33,6 +34,10 @@ function AddTransactionForm() {
   const [portions, setPortions] = useState('');
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // QRIS Payment state
+  const [showQrisModal, setShowQrisModal] = useState(false);
+  const [qrisPaid, setQrisPaid] = useState(false);
 
   // Set transaction type based on URL query parameter
   useEffect(() => {
@@ -240,6 +245,39 @@ function AddTransactionForm() {
         <Save className="w-6 h-6" />
         {isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}
       </button>
+
+      {/* QRIS Payment Button (only for income) */}
+      {transactionType === 'income' && amount && parseInt(amount) > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowQrisModal(true)}
+          disabled={qrisPaid}
+          className="w-full py-4 rounded-2xl font-bold text-white text-lg shadow-lg bg-linear-to-br from-blue-500 to-cyan-600 shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <QrCode className="w-6 h-6" />
+          {qrisPaid ? '✅ Pembayaran QRIS Berhasil' : 'Bayar dengan QRIS'}
+        </button>
+      )}
+
+      {/* QRIS Payment Modal */}
+      {showQrisModal && (
+        <QrisPaymentModal
+          isOpen={showQrisModal}
+          onClose={() => setShowQrisModal(false)}
+          amount={parseInt(amount)}
+          description={description || `Penjualan ${portions ? portions + ' porsi ' : ''}Tahu Walik`}
+          portions={portions ? parseInt(portions) : 0}
+          onSuccess={(data) => {
+            setQrisPaid(true);
+            alert('✅ Pembayaran QRIS berhasil! Transaksi akan otomatis tercatat.');
+            setShowQrisModal(false);
+            // Optionally auto-submit the transaction
+            setTimeout(() => {
+              router.push('/sales');
+            }, 1500);
+          }}
+        />
+      )}
     </form>
     </>
   );

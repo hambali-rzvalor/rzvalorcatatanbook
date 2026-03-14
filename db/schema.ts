@@ -1,4 +1,4 @@
-import { pgTable, text, integer, decimal, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, decimal, timestamp, pgEnum, uuid, json } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Enum untuk tipe transaksi
@@ -12,6 +12,9 @@ export const categoryEnum = pgEnum('category', [
   'listrik_air',
   'lain_lain'
 ]);
+
+// Enum untuk status pembayaran QRIS
+export const qrisPaymentStatusEnum = pgEnum('qris_payment_status', ['pending', 'success', 'failed', 'expired']);
 
 // Tabel untuk bahan/stok ingredients
 export const ingredients = pgTable('ingredients', {
@@ -35,13 +38,40 @@ export const transactions = pgTable('transactions', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Tabel untuk pembayaran QRIS
+export const qrisPayments = pgTable('qris_payments', {
+  id: uuid('id').primaryKey().defaultRandom(), // Unique ID untuk QRIS payment
+  orderId: text('order_id').notNull().unique(), // Order ID dari Midtrans
+  transactionId: integer('transaction_id').references(() => transactions.id), // Reference ke transactions table
+  amount: decimal('amount', { precision: 12, scale: 0 }).notNull(), // Jumlah pembayaran
+  status: qrisPaymentStatusEnum('status').notNull().default('pending'), // Status pembayaran
+  qrString: text('qr_string'), // QR code string dari Midtrans
+  qrUrl: text('qr_url'), // URL QR code (jika ada)
+  actions: json('actions'), // Actions dari Midtrans (QRIS URL, dll)
+  paidAt: timestamp('paid_at', { withTimezone: true }), // Waktu pembayaran berhasil
+  expiresAt: timestamp('expires_at', { withTimezone: true }), // Waktu kedaluwarsa QR
+  metadata: json('metadata'), // Metadata tambahan
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Relations
 export const ingredientsRelations = relations(ingredients, ({}) => ({
   // Tidak ada relasi langsung ke transactions untuk simplicity
 }));
 
-export const transactionsRelations = relations(transactions, ({}) => ({
-  // Tidak ada relasi langsung ke ingredients untuk simplicity
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  qrisPayment: one(qrisPayments, {
+    fields: [transactions.id],
+    references: [qrisPayments.transactionId],
+  }),
+}));
+
+export const qrisPaymentsRelations = relations(qrisPayments, ({ one }) => ({
+  transaction: one(transactions, {
+    fields: [qrisPayments.transactionId],
+    references: [transactions.id],
+  }),
 }));
 
 // Type inference
@@ -51,3 +81,6 @@ export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
 export type TransactionType = 'income' | 'expense';
 export type Category = 'penjualan' | 'bahan_baku' | 'operasional' | 'listrik_air' | 'lain_lain';
+export type QrisPayment = typeof qrisPayments.$inferSelect;
+export type NewQrisPayment = typeof qrisPayments.$inferInsert;
+export type QrisPaymentStatus = 'pending' | 'success' | 'failed' | 'expired';

@@ -41,7 +41,8 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
     return pages;
   };
 
-  if (totalPages <= 1) return null;
+  // Show pagination even for single page
+  if (totalPages === 0) return null;
 
   return (
     <div className="flex items-center justify-center gap-2 mt-6">

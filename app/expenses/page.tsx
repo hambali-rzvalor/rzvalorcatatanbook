@@ -5,6 +5,7 @@ import { Wallet, Plus, Search, Filter, ChevronRight, Pencil, Trash2, Check, X, C
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
+import Pagination from '@/components/Pagination';
 import { getTransactions, deleteTransaction, updateTransaction } from '@/app/actions';
 
 function formatIDR(amount: number) {
@@ -26,8 +27,13 @@ export default function ExpensesPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
   useEffect(() => {
     loadExpenses();
+    setCurrentPage(1); // Reset to first page when filter changes
 
     // Handle scroll for header shadow effect
     const handleScroll = () => {
@@ -36,11 +42,40 @@ export default function ExpensesPage() {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [selectedDate]);
+
+  function getDateRange(filter: string) {
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    if (filter === 'today') {
+      return { startDate: startOfDay, endDate: endOfDay };
+    } else if (filter === 'week') {
+      const startOfWeek = new Date(now);
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Go to Monday
+      startOfWeek.setDate(now.getDate() + diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+      return { startDate: startOfWeek, endDate: endOfDay };
+    } else if (filter === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { startDate: startOfMonth, endDate: endOfDay };
+    }
+    return { startDate: undefined, endDate: undefined };
+  }
 
   async function loadExpenses() {
     try {
-      const response = await getTransactions({ type: 'expense' });
+      const { startDate, endDate } = getDateRange(selectedDate);
+      const response = await getTransactions({ 
+        type: 'expense',
+        startDate,
+        endDate,
+      });
       if (response.success) {
         setExpenses(response.data);
       }
@@ -52,6 +87,12 @@ export default function ExpensesPage() {
   }
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + parseInt(exp.amount || 0), 0);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(expenses.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedExpenses = expenses.slice(startIndex, endIndex);
 
   async function handleDelete(id: number) {
     if (!confirm('Yakin ingin menghapus pengeluaran ini?')) return;
@@ -181,107 +222,123 @@ export default function ExpensesPage() {
               </a>
             </div>
           ) : (
-            <div className="space-y-3">
-              {expenses.map((expense) => (
-                <div
-                  key={expense.id}
-                  className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                      <div className="bg-linear-to-br from-red-400 to-red-500 p-3 rounded-xl shadow-sm shrink-0">
-                        <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <>
+              <div className="space-y-3">
+                {paginatedExpenses.map((expense) => (
+                  <div
+                    key={expense.id}
+                    className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className="bg-linear-to-br from-red-400 to-red-500 p-3 rounded-xl shadow-sm shrink-0">
+                          <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        </div>
+                        {editingId === expense.id ? (
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <input
+                              type="text"
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              className="flex-1 min-w-0 px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm shrink-0"
+                              placeholder="Deskripsi"
+                            />
+                            <input
+                              type="number"
+                              value={editAmount}
+                              onChange={(e) => setEditAmount(e.target.value)}
+                              className="w-24 sm:w-32 px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm shrink-0"
+                              placeholder="Jumlah"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{expense.description}</p>
+                            <p className="text-xs sm:text-sm text-gray-500 font-medium flex items-center gap-1.5 flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(expense.transactionDate).toLocaleDateString('id-ID', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  timeZone: 'Asia/Jakarta',
+                                })}
+                              </span>
+                              <span className="text-gray-300">•</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {new Date(expense.transactionDate).toLocaleTimeString('id-ID', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  timeZone: 'Asia/Jakarta',
+                                })}
+                              </span>
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      {editingId === expense.id ? (
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <input
-                            type="text"
-                            value={editDescription}
-                            onChange={(e) => setEditDescription(e.target.value)}
-                            className="flex-1 min-w-0 px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm shrink-0"
-                            placeholder="Deskripsi"
-                          />
-                          <input
-                            type="number"
-                            value={editAmount}
-                            onChange={(e) => setEditAmount(e.target.value)}
-                            className="w-24 sm:w-32 px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm shrink-0"
-                            placeholder="Jumlah"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{expense.description}</p>
-                          <p className="text-xs sm:text-sm text-gray-500 font-medium flex items-center gap-1.5 flex-wrap">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(expense.transactionDate).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'short',
-                                timeZone: 'Asia/Jakarta',
-                              })}
-                            </span>
-                            <span className="text-gray-300">•</span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {new Date(expense.transactionDate).toLocaleTimeString('id-ID', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                timeZone: 'Asia/Jakarta',
-                              })}
-                            </span>
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                      {editingId === expense.id ? (
-                        <>
-                          <button
-                            onClick={() => handleSaveEdit(expense.id)}
-                            className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                            title="Simpan"
-                          >
-                            <Check className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                            title="Batal"
-                          >
-                            <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-sm sm:text-lg font-bold text-red-600 whitespace-nowrap">-{formatIDR(parseInt(expense.amount))}</span>
-                          <button
-                            onClick={() => handleEdit(expense)}
-                            className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(expense.id)}
-                            disabled={deletingId === expense.id}
-                            className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Hapus"
-                          >
-                            {deletingId === expense.id ? (
-                              <span className="animate-spin">⏳</span>
-                            ) : (
-                              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                            )}
-                          </button>
-                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 shrink-0" />
-                        </>
-                      )}
+                      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        {editingId === expense.id ? (
+                          <>
+                            <button
+                              onClick={() => handleSaveEdit(expense.id)}
+                              className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                              title="Simpan"
+                            >
+                              <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                              title="Batal"
+                            >
+                              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-sm sm:text-lg font-bold text-red-600 whitespace-nowrap">-{formatIDR(parseInt(expense.amount))}</span>
+                            <button
+                              onClick={() => handleEdit(expense)}
+                              className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(expense.id)}
+                              disabled={deletingId === expense.id}
+                              className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Hapus"
+                            >
+                              {deletingId === expense.id ? (
+                                <span className="animate-spin">⏳</span>
+                              ) : (
+                                <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                              )}
+                            </button>
+                            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 shrink-0" />
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Modern Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+
+          {/* Results count */}
+          {expenses.length > 0 && (
+            <p className="text-center text-gray-400 text-sm mt-6">
+              Menampilkan {startIndex + 1}-{Math.min(endIndex, expenses.length)} dari {expenses.length} transaksi
+            </p>
           )}
 
           {/* Floating Add Button (Mobile) */}

@@ -1,6 +1,6 @@
 'use server';
 
-import { db, transactions, ingredients, type NewTransaction, type TransactionType, type Category } from '@/db';
+import { db, transactions, ingredients, qrisPayments, type NewTransaction, type TransactionType, type Category } from '@/db';
 import { eq, desc, sql, and, gte, lt } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
@@ -103,6 +103,25 @@ export async function getDashboardData() {
 
     todayStats.profit = todayStats.revenue - todayStats.expense;
 
+    // Get ALL transactions for total capital calculation
+    const allTransactions = await db
+      .select()
+      .from(transactions)
+      .orderBy(desc(transactions.transactionDate));
+
+    // Calculate total revenue and expense from all time
+    let totalRevenue = 0;
+    let totalExpense = 0;
+
+    allTransactions.forEach((tx) => {
+      const amount = parseInt(tx.amount);
+      if (tx.type === 'income') {
+        totalRevenue += amount;
+      } else {
+        totalExpense += amount;
+      }
+    });
+
     // Get recent activity (last 10 transactions)
     const recentActivity = await db
       .select()
@@ -124,6 +143,11 @@ export async function getDashboardData() {
           revenue: todayStats.revenue,
           expense: todayStats.expense,
           soldPortions: todayStats.soldPortions,
+        },
+        totalStats: {
+          revenue: totalRevenue,
+          expense: totalExpense,
+          profit: totalRevenue - totalExpense,
         },
         recentActivity: recentActivity.map((tx) => ({
           id: tx.id,
@@ -155,6 +179,11 @@ export async function getDashboardData() {
           revenue: 0,
           expense: 0,
           soldPortions: 0,
+        },
+        totalStats: {
+          revenue: 0,
+          expense: 0,
+          profit: 0,
         },
         recentActivity: [],
         lowStockIngredients: [],
@@ -374,6 +403,64 @@ export async function addIngredient(data: {
     return {
       success: false,
       message: 'Gagal menambahkan bahan',
+    };
+  }
+}
+
+/**
+ * Get QRIS payments
+ */
+export async function getQrisPayments() {
+  try {
+    const result = await db
+      .select()
+      .from(qrisPayments)
+      .orderBy(desc(qrisPayments.createdAt))
+      .limit(50);
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    console.error('Error getting QRIS payments:', error);
+    return {
+      success: false,
+      data: [],
+      message: 'Gagal mengambil pembayaran QRIS',
+    };
+  }
+}
+
+/**
+ * Get QRIS payment by order ID
+ */
+export async function getQrisPaymentByOrderId(orderId: string) {
+  try {
+    const result = await db
+      .select()
+      .from(qrisPayments)
+      .where(eq(qrisPayments.orderId, orderId))
+      .limit(1);
+
+    if (result.length === 0) {
+      return {
+        success: false,
+        data: null,
+        message: 'Payment not found',
+      };
+    }
+
+    return {
+      success: true,
+      data: result[0],
+    };
+  } catch (error) {
+    console.error('Error getting QRIS payment:', error);
+    return {
+      success: false,
+      data: null,
+      message: 'Gagal mengambil pembayaran QRIS',
     };
   }
 }
