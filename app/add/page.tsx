@@ -306,7 +306,7 @@ export default function AddTransactionPage() {
           <Header />
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-32 lg:pb-8">
           {/* Header Section */}
           <div className="mb-6">
             <a href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4 transition-colors">

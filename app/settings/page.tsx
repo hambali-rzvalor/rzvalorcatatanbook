@@ -74,7 +74,7 @@ export default function SettingsPage() {
           <Header />
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-32 lg:pb-8">
           {/* Profile Card */}
           <div className="bg-linear-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-lg shadow-green-200 text-white mb-6">
             <div className="flex items-center gap-4">

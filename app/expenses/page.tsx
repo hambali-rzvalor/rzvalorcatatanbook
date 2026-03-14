@@ -152,7 +152,7 @@ export default function ExpensesPage() {
           <Header />
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-32 lg:pb-8">
           {/* Summary Card */}
           {expenses.length > 0 ? (
             <div className="mb-6">
@@ -340,14 +340,6 @@ export default function ExpensesPage() {
               Menampilkan {startIndex + 1}-{Math.min(endIndex, expenses.length)} dari {expenses.length} transaksi
             </p>
           )}
-
-          {/* Floating Add Button (Mobile) */}
-          <a
-            href="/add?type=expense"
-            className="lg:hidden fixed bottom-24 right-6 bg-linear-to-br from-red-500 to-red-600 text-white p-4 rounded-full shadow-lg shadow-red-300 hover:shadow-xl transition-shadow"
-          >
-            <Plus className="w-6 h-6" />
-          </a>
         </main>
       </div>
       <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">

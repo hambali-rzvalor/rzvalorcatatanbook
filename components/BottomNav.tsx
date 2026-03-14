@@ -31,14 +31,15 @@ function NavItem({ icon: Icon, label, href }: NavItemProps) {
 
 export default function BottomNav() {
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-2 safe-area-pb shadow-lg shadow-gray-200/50">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-2 safe-area-pb shadow-lg shadow-gray-200/50 z-50">
       <div className="flex justify-around items-center">
         <NavItem icon={Home} label="Home" href="/" />
         <NavItem icon={ShoppingCart} label="Jual" href="/sales" />
-        <div className="relative -top-6">
+        <div className="relative">
           <a
             href="/add"
             className="flex items-center justify-center w-14 h-14 bg-linear-to-br from-green-500 to-green-600 rounded-full shadow-lg shadow-green-300 text-white hover:shadow-xl hover:shadow-green-400 transition-shadow"
+            style={{ transform: 'translateY(-50%)' }}
           >
             <PlusCircle className="w-7 h-7" strokeWidth={2.5} />
           </a>

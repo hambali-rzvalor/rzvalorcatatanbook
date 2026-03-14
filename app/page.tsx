@@ -97,7 +97,7 @@ function DashboardContent() {
           <Header />
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-32 lg:pb-8">
           {/* Section: Total Untung Hari Ini & Sisa Modal (Highlight) */}
           <section className="mb-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
